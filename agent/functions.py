@@ -9,7 +9,7 @@ import pandas as pd
 from db.clickhouse_client import get_client
 from utils.time_utils import parse_time_range
 from utils.chart import draw_chart
-from agent.simple_analyzer import analyze_result
+from agent.analyzer import analyze_result
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -130,6 +130,18 @@ class QueryPlanExecutor:
             group_by_parts.extend(["hostname", "task_name"])
             select_parts.insert(0, "hostname")
             select_parts.insert(1, "task_name")
+        elif aggregation == "group_by_target_node":
+            group_by_parts.append("target_node")
+            select_parts.insert(0, "target_node")
+        elif aggregation == "group_by_target_node_task":
+            group_by_parts.extend(["target_node", "task_name"])
+            select_parts.insert(0, "target_node")
+            select_parts.insert(1, "task_name")
+        elif aggregation == "group_by_target_node_province_isp":
+            group_by_parts.extend(["target_node", "src_province", "src_isp"])
+            select_parts.insert(0, "target_node")
+            select_parts.insert(1, "src_province")
+            select_parts.insert(2, "src_isp")
         
         # 构建 WHERE 子句
         where_parts = [
@@ -242,18 +254,37 @@ class QueryPlanExecutor:
 _executor: Optional[QueryPlanExecutor] = None
 
 
-def get_executor() -> QueryPlanExecutor:
+def get_executor():
     """
-    获取 QueryPlan 执行器实例（单例模式）
+    获取 QueryPlan 执行器实例（支持智能引擎切换）
     
     Returns:
-        QueryPlanExecutor 实例
+        执行器实例（原始版本或增强版本）
     """
     global _executor
     
     if _executor is not None:
         return _executor
     
-    _executor = QueryPlanExecutor()
+    # 根据配置决定使用哪种执行器
+    from config.settings import settings
+    
+    if settings.ENABLE_INTELLIGENT_ENGINE:
+        try:
+            # 尝试使用增强版执行器
+            from agent.intelligent_query_engine import get_enhanced_executor
+            _executor = get_enhanced_executor()
+            logger.info("使用智能查询引擎")
+        except Exception as e:
+            logger.warning(f"智能引擎初始化失败，回退到原始执行器: {e}")
+            if settings.INTELLIGENT_ENGINE_FALLBACK:
+                _executor = QueryPlanExecutor()
+            else:
+                raise
+    else:
+        # 使用原始执行器
+        _executor = QueryPlanExecutor()
+        logger.info("使用原始查询引擎")
+    
     return _executor
 

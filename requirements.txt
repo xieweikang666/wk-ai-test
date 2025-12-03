@@ -1,3 +1,4 @@
+# 生产依赖
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
 openai==1.3.0

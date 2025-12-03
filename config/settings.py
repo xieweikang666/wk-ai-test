@@ -4,6 +4,12 @@
 import os
 import logging
 from typing import List
+from pydantic import Field
+from dotenv import load_dotenv
+
+# 加载环境变量
+load_dotenv()
+
 try:
     from pydantic_settings import BaseSettings
 except ImportError:
@@ -21,27 +27,33 @@ class Settings(BaseSettings):
     """应用配置"""
     
     # LLM 配置（GPT-4o mini - 国内 API）
-    OPENAI_API_KEY: str = "sk-Yle3nSp72pPw66kaHy4goZmjPdz5oHTrwUdcY29ITTWWNtHq"
-    OPENAI_API_BASE: str = "https://geekai.co/api/v1"
-    OPENAI_MODEL: str = "gpt-4o-mini"
+    OPENAI_API_KEY: str = Field(default="", env="OPENAI_API_KEY")
+    OPENAI_API_BASE: str = Field(default="https://geekai.co/api/v1", env="OPENAI_API_BASE")
+    OPENAI_MODEL: str = Field(default="gpt-4o-mini", env="OPENAI_MODEL")
     
-    # ClickHouse 配置（阿里云）
-    CLICKHOUSE_ENABLE: bool = True
-    CLICKHOUSE_ADDRESSES: List[str] = ["cc-2zet16rb5415n61g4-ck-l5.clickhouseserver.rds.aliyuncs.com:9000"]
-    CLICKHOUSE_DATABASE: str = "detect"
-    CLICKHOUSE_USERNAME: str = "zcdn"
-    CLICKHOUSE_PASSWORD: str = "0b6e38A0b3c0cf"
-    CLICKHOUSE_TABLE_PING: str = "detect_ping_log"
+  # ClickHouse 配置（阿里云）
+    CLICKHOUSE_ENABLE: bool = Field(default=True, env="CLICKHOUSE_ENABLE")
+    CLICKHOUSE_DATABASE: str = Field(default="detect", env="CLICKHOUSE_DATABASE")
+    CLICKHOUSE_USERNAME: str = Field(default="zcdn", env="CLICKHOUSE_USERNAME")
+    CLICKHOUSE_PASSWORD: str = Field(default="", env="CLICKHOUSE_PASSWORD")
+    CLICKHOUSE_TABLE_PING: str = Field(default="detect_ping_log", env="CLICKHOUSE_TABLE_PING")
     
     # 查询限制
-    MAX_QUERY_ROWS: int = 1000000
+    MAX_QUERY_ROWS: int = Field(default=1000000, env="MAX_QUERY_ROWS")
     
     # 静态文件目录
-    STATIC_DIR: str = "static"
+    STATIC_DIR: str = Field(default="static", env="STATIC_DIR")
     
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    # 智能引擎配置
+    ENABLE_INTELLIGENT_ENGINE: bool = Field(default=False, env="ENABLE_INTELLIGENT_ENGINE")
+    ENABLE_QUALITY_CHECK: bool = Field(default=True, env="ENABLE_QUALITY_CHECK")
+    INTELLIGENT_ENGINE_FALLBACK: bool = Field(default=True, env="INTELLIGENT_ENGINE_FALLBACK")
+    
+    @property
+    def CLICKHOUSE_ADDRESSES(self) -> List[str]:
+        """从环境变量解析地址列表"""
+        addresses_str = os.getenv("CLICKHOUSE_ADDRESSES", "cc-2zet16rb5415n61g4-ck-l5.clickhouseserver.rds.aliyuncs.com:9000")
+        return [addr.strip() for addr in addresses_str.split(",") if addr.strip()]
 
 
 def init_settings() -> Settings:

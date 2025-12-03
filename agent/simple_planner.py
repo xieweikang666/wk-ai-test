@@ -37,7 +37,8 @@ class SimpleQueryPlanner:
                 "time_range": "last_1_hour"  # 默认近1小时
             },
             "aggregation": "none",
-            "need_chart": False
+            "need_chart": False,
+            "original_query": user_query  # 保存原始问题
         }
         
         # 解析时间范围
@@ -82,22 +83,35 @@ class SimpleQueryPlanner:
                     query_plan["filters"]["src_province"] = []
                 query_plan["filters"]["src_province"].append(province)
         
-        # 解析设备相关查询
-        if "设备" in user_query or "探测设备" in user_query or "hostname" in user_query:
-            query_plan["aggregation"] = "group_by_isp"
-            query_plan["metrics"] = ["device_count"]
+        # 解析目标节点相关查询 - 优先处理
+        if "目标节点" in user_query or "target_node" in user_query:
+            query_plan["metrics"] = ["avg_lost", "avg_rtt"]
+            if "地区" in user_query or "src_isp" in user_query or "src_province" in user_query:
+                # 目标节点覆盖地区分析
+                query_plan["aggregation"] = "group_by_target_node_province_isp"
+            else:
+                # 目标节点丢包分析（按task_name分组，但查询target_node）
+                query_plan["aggregation"] = "group_by_target_node_task"
+        # 解析设备相关查询 - 需要更精确的匹配
+        elif ("探测设备" in user_query and "hostname" in user_query) or ("发起探测" in user_query and "hostname" in user_query):
+            if "各运营商" in user_query or "运营商" in user_query:
+                # 按运营商统计设备数量
+                query_plan["aggregation"] = "group_by_isp"
+                query_plan["metrics"] = ["device_count"]
+            else:
+                # 分析设备质量
+                query_plan["aggregation"] = "group_by_hostname_task"
+                query_plan["metrics"] = ["avg_lost", "avg_rtt"]
         
-        # 解析节点相关查询
-        if "节点" in user_query or "目标节点" in user_query or "target_node" in user_query:
-            query_plan["aggregation"] = "group_by_target_node"
-        
-        # 解析地区覆盖查询
+        # 解析地区覆盖查询 - 但不要覆盖已有的aggregation
         if "覆盖" in user_query and ("地区" in user_query or "省份" in user_query):
-            query_plan["aggregation"] = "group_by_province_isp"
+            if query_plan["aggregation"] == "none":  # 只有在未设置时才设置
+                query_plan["aggregation"] = "group_by_province_isp"
         
-        # 解析任务相关查询
+        # 解析任务相关查询 - 但不要覆盖已有的aggregation
         if "任务" in user_query or "task_name" in user_query:
-            query_plan["aggregation"] = "group_by_hostname_task"
+            if query_plan["aggregation"] == "none":  # 只有在未设置时才设置
+                query_plan["aggregation"] = "group_by_hostname_task"
         
         # 解析是否需要图表
         if "图" in user_query or "趋势" in user_query or "对比" in user_query:

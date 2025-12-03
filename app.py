@@ -49,6 +49,7 @@ class ChatResponse(BaseModel):
     answer: str
     chart_url: Optional[str] = None
     sql: Optional[str] = None  # 生成的 SQL（用于评估）
+    quality_summary: Optional[str] = None  # 质量摘要（智能引擎）
 
 
 @app.get("/")
@@ -91,12 +92,11 @@ async def chat(request: ChatRequest):
     
     流程：
     1. 用户输入问题
-    2. RAG 检索数据库上下文
-    3. LLM 生成 QueryPlan
-    4. 根据 QueryPlan 生成 SQL 并执行
-    5. 可选：生成图表
-    6. LLM 分析结果
-    7. 返回答案和图表路径
+    2. 生成 QueryPlan
+    3. 根据配置选择执行器（原始/智能）
+    4. 执行查询并分析结果
+    5. 可选：生成图表和质量报告
+    6. 返回答案和相关信息
     """
     if not request.message:
         raise HTTPException(status_code=400, detail="消息不能为空")
@@ -104,43 +104,77 @@ async def chat(request: ChatRequest):
     try:
         logger.info(f"收到用户查询: {request.message}")
         
-        # 1. 获取规划器和执行器
+        # 1. 获取规划器
         planner = get_planner()
-        executor = get_executor()
         
         # 2. 生成 QueryPlan
         query_plan = planner.plan(request.message)
+        query_plan["original_query"] = request.message  # 确保原始查询被保存
         
-        # 3. 生成 SQL（用于展示和评估）
-        # 注意：这里需要访问私有方法，为了展示 SQL，我们通过一个公开方法获取
-        generated_sql = executor.get_generated_sql(query_plan)
+        # 3. 获取执行器（自动选择智能引擎或原始引擎）
+        executor = get_executor()
         
-        # 4. 执行查询
-        df = executor.run_query(query_plan)
+        # 4. 检查是否使用了智能引擎
+        is_intelligent = settings.ENABLE_INTELLIGENT_ENGINE and hasattr(executor, 'engine')
         
-        # 5. 生成图表（如果需要）
-        chart_path = None
-        if query_plan.get("need_chart", False):
-            chart_type = query_plan.get("chart_type", "line")
-            chart_path = executor.draw_chart_wrapper(
-                df=df,
-                chart_type=chart_type,
-                title=f"查询结果 - {request.message[:50]}"
+        if is_intelligent:
+            # 使用智能引擎执行
+            logger.info("使用智能查询引擎执行")
+            
+            # 直接通过智能引擎执行
+            query_result = executor.engine.execute_intelligent_query(
+                user_query=request.message,
+                query_plan=query_plan,
+                enable_quality_check=settings.ENABLE_QUALITY_CHECK
             )
-        
-        # 6. 分析结果
-        answer = executor.explain_result(
-            df=df,
-            query_plan=query_plan,
-            chart_path=chart_path
-        )
-        
-        # 7. 返回结果
-        response = ChatResponse(
-            answer=answer,
-            chart_url=chart_path,
-            sql=generated_sql  # 输出 SQL 供评估
-        )
+            
+            if not query_result["success"]:
+                raise Exception(query_result.get("error", "智能查询执行失败"))
+            
+            # 生成响应
+            response_data = executor.engine.generate_response_format(query_result)
+            
+            response = ChatResponse(
+                answer=response_data["answer"],
+                chart_url=response_data["chart_url"],
+                sql=response_data["sql"],
+                quality_summary=response_data.get("quality_summary")
+            )
+            
+        else:
+            # 使用原始引擎执行
+            logger.info("使用原始查询引擎执行")
+            
+            # 生成 SQL（用于展示和评估）
+            generated_sql = executor.get_generated_sql(query_plan)
+            
+            # 执行查询
+            df = executor.run_query(query_plan)
+            
+            # 生成图表（如果需要）
+            chart_path = None
+            if query_plan.get("need_chart", False):
+                chart_type = query_plan.get("chart_type", "line")
+                chart_path = executor.draw_chart_wrapper(
+                    df=df,
+                    chart_type=chart_type,
+                    title=f"查询结果 - {request.message[:50]}"
+                )
+            
+            # 分析结果
+            answer = executor.explain_result(
+                df=df,
+                query_plan=query_plan,
+                chart_path=chart_path
+            )
+            
+            # 返回结果
+            response = ChatResponse(
+                answer=answer,
+                chart_url=chart_path,
+                sql=generated_sql,
+                quality_summary=None
+            )
         
         logger.info("查询处理完成")
         return response
@@ -151,6 +185,73 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"处理失败: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"处理失败: {str(e)}")
+
+
+@app.get("/engine/status")
+async def engine_status():
+    """获取当前引擎状态"""
+    try:
+        return {
+            "intelligent_engine_enabled": settings.ENABLE_INTELLIGENT_ENGINE,
+            "quality_check_enabled": settings.ENABLE_QUALITY_CHECK,
+            "fallback_enabled": settings.INTELLIGENT_ENGINE_FALLBACK,
+            "current_engine": "intelligent" if settings.ENABLE_INTELLIGENT_ENGINE else "original"
+        }
+    except Exception as e:
+        logger.error(f"获取引擎状态失败: {e}")
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/engine/switch")
+async def switch_engine(enable_intelligent: bool = None):
+    """切换查询引擎（仅用于开发测试）"""
+    try:
+        if enable_intelligent is None:
+            raise HTTPException(status_code=400, detail="请指定是否启用智能引擎")
+        
+        # 更新配置（临时，重启后恢复）
+        settings.ENABLE_INTELLIGENT_ENGINE = enable_intelligent
+        
+        # 清除执行器缓存以应用新配置
+        global _executor
+        from agent.functions import _executor as func_executor
+        func_executor = None
+        
+        status = "intelligent" if enable_intelligent else "original"
+        logger.info(f"引擎已切换为: {status}")
+        
+        return {
+            "message": f"已切换到{status}引擎",
+            "current_engine": status,
+            "intelligent_engine_enabled": settings.ENABLE_INTELLIGENT_ENGINE
+        }
+        
+    except Exception as e:
+        logger.error(f"引擎切换失败: {e}")
+        raise HTTPException(status_code=500, detail=f"引擎切换失败: {str(e)}")
+
+
+@app.get("/engine/quality")
+async def get_quality_metrics():
+    """获取智能引擎质量指标（如果启用）"""
+    if not settings.ENABLE_INTELLIGENT_ENGINE:
+        return {"message": "智能引擎未启用"}
+    
+    try:
+        # 这里可以添加更多质量指标收集逻辑
+        return {
+            "status": "intelligent_engine_active",
+            "quality_check_enabled": settings.ENABLE_QUALITY_CHECK,
+            "metrics": {
+                "sql_generation_quality": "enabled",
+                "result_analysis_quality": "enabled", 
+                "anomaly_detection": "enabled",
+                "semantic_understanding": "enabled"
+            }
+        }
+    except Exception as e:
+        logger.error(f"获取质量指标失败: {e}")
+        return {"status": "error", "message": str(e)}
 
 
 if __name__ == "__main__":
