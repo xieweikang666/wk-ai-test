@@ -99,43 +99,73 @@ cp .env.example .env
 # CLICKHOUSE_PASSWORD=your_password_here
 ```
 
-### 🚀 启动应用
+### 🚀 快速启动
 
-#### 方式一：Web API 模式 (推荐)
+#### ⭐ 一键启动（推荐）
+
+**开发模式** - 前后端独立运行，支持热重载：
 ```bash
-# 启动 FastAPI 服务
+./start-dev.sh
+```
+- 🔧 后端：http://localhost:8000
+- 🎨 前端：http://localhost:3000 (React + Ant Design)
+- 📝 日志：`logs/backend.log`, `logs/frontend.log`
+
+**生产模式** - 单端口部署：
+```bash
+./build-prod.sh && ./start-prod.sh
+```
+- 🌐 统一访问：http://localhost:8000
+- 📦 React构建文件，无需前端服务器
+
+#### 🛠️ 传统启动方式
+
+**Web API 模式**：
+```bash
+# 开发模式（React前端需单独启动）
 python3 app.py --host 0.0.0.0 --port 8000
 
-# 或使用 uvicorn
-uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+# 生产模式（自动服务React构建文件）
+python3 app.py --host 0.0.0.0 --port 8000 --prod
 ```
 
-#### 方式二：命令行模式
+**命令行模式**：
 ```bash
 # 直接查询
 python3 app.py -q "统计近1h各运营商的探测设备数量"
 
 # 运行质量自测
 python3 self_check.py
-
-# 测试模式
-python3 cli.py --test
 ```
 
-#### 方式三：Docker 容器化
+**Docker 容器化**：
 ```bash
 # Docker Compose 部署
 docker-compose up -d
-
-# 健康检查
-curl http://localhost:8000/health
 ```
 
 ### 🌐 服务访问
 
-- **API 文档**: http://localhost:8000/docs
-- **交互界面**: http://localhost:8000 (ChatGPT风格界面)
-- **健康检查**: http://localhost:8000/health
+| 模式 | 前端地址 | 后端API | 适用场景 |
+|------|----------|---------|----------|
+| **开发模式** | http://localhost:3000 | http://localhost:8000 | 日常开发调试 |
+| **生产模式** | http://localhost:8000 | http://localhost:8000 | 生产部署 |
+| **API文档** | - | http://localhost:8000/docs | 接口文档 |
+| **健康检查** | - | http://localhost:8000/health | 状态检查 |
+
+### 🎨 前端界面
+
+#### React + Ant Design 现代化界面（推荐）
+- **ChatGPT风格** 对话界面
+- **专业表格** 展示，自动数值对齐
+- **SQL语法高亮** 显示
+- **图表预览和下载** 功能
+- **响应式设计**，移动端友好
+
+#### 原始HTML界面（开发模式备用）
+- **基础Markdown渲染**
+- **表格优化显示**
+- **简单图表展示**
 
 ## 💡 使用示例
 
@@ -220,7 +250,15 @@ wk-ai-test/
 │   ├── 🎯 simple_planner.py      # 查询规划器 (自然语言→QueryPlan)
 │   ├── ⚙️ functions.py           # 查询执行器 (SQL生成+多聚合模式)
 │   ├── 🤖 llm.py                 # LLM模型调用封装
-│   └── 📚 simple_analyzer.py     # 简化分析器
+│   ├── 🚀 intelligent_sql_generator.py    # 智能SQL生成器
+│   ├── 🧠 intelligent_analyzer.py         # 智能数据分析器
+│   ├── 🛡️ query_quality_guard.py          # 查询质量保障系统
+│   └── 🚀 intelligent_query_engine.py     # 智能查询引擎
+├── 📁 frontend/                  # React前端 (新增)
+│   ├── src/components/           # React组件
+│   ├── package.json              # 前端依赖配置
+│   ├── start.sh                  # 前端启动脚本
+│   └── README.md                 # 前端详细说明
 ├── 📁 db/                       # 数据库层
 │   ├── 🗃️ clickhouse_client.py   # ClickHouse安全客户端
 │   └── 📄 schema.md              # 数据库结构文档
@@ -228,14 +266,17 @@ wk-ai-test/
 │   └── ⚙️ settings.py            # 环境变量配置
 ├── 📁 utils/                    # 工具函数
 │   ├── 📊 chart.py               # 图表生成器
-│   └── ⏰ time_utils.py           # 时间处理工具
+│   └── ⏰ time_utils.py           # 时间处理工具(支持中文自然语言)
+├── 📁 static/                   # 静态文件
+│   └── index.html                # 原始HTML界面(备用)
 ├── 📁 tests/                     # 测试框架
-│   ├── 🔧 conftest.py            # pytest配置
-│   └── 🧪 test_agent/            # 核心模块测试
 ├── 📁 logs/                      # 日志文件
 ├── 📁 reports/                   # 自测报告
-├── 🚀 app.py                     # FastAPI主入口
+├── 🚀 app.py                     # FastAPI主入口(支持--prod模式)
+├── 🚀 start-dev.sh              # 一键开发启动脚本
+├── 🏗️ build-prod.sh             # 一键构建脚本
 ├── 🧪 self_check.py              # 质量保证系统
+├── 📖 STARTUP_GUIDE.md           # 启动脚本使用指南
 └── 📋 requirements*.txt          # 依赖管理
 ```
 
@@ -243,11 +284,33 @@ wk-ai-test/
 
 | 指标 | 数值 | 说明 |
 |------|------|------|
-| **核心代码行数** | 2,800+行 | agent/ + config/ + db/ + utils/ |
-| **模块文件数** | 22个 | 核心业务模块（含智能引擎） |
-| **测试覆盖** | 基础框架已建立 | pytest + 质量检查 |
+| **核心代码行数** | 3,500+行 | agent/ + config/ + db/ + utils/ + frontend/ |
+| **模块文件数** | 28个 | 核心业务模块（含智能引擎+React前端） |
+| **React组件数** | 3个 | ChatInterface, DataTable, ChartDisplay |
+| **一键脚本** | 3个 | start-dev.sh, build-prod.sh, start-prod.sh |
 | **API接口** | 6个 | /chat, /health, /engine/*, /docs |
 | **查询模式** | 动态生成 | 从8种固定模式升级为LLM动态生成 |
+| **前端框架** | React 18 + Ant Design 5 | 现代化UI，替代传统HTML |
+
+## 📋 核心升级 (2024.12)
+
+### 🎨 前端架构升级
+- **React + Ant Design** 替代传统HTML界面
+- **组件化架构**，易于维护和扩展
+- **专业表格组件**，自动数值识别和对齐
+- **响应式设计**，完美适配移动端
+- **SQL语法高亮**，提升代码可读性
+
+### 🛠️ 时间解析增强
+- **中文自然语言** 支持：昨天、今天、晚高峰等
+- **复杂时间表达** 解析：19-23点、上午8-12点等
+- **智能时间范围** 转换，精确到秒级时间戳
+
+### 🚀 部署方案优化
+- **一键开发启动**：`./start-dev.sh`
+- **一键生产构建**：`./build-prod.sh && ./start-prod.sh`
+- **双端口开发** / **单端口生产** 灵活切换
+- **日志管理** 和 **优雅停止** 机制
 
 ## 🚀 智能引擎升级 (2024.12)
 
@@ -345,11 +408,27 @@ cp .env.example .env
 python3 app.py --host 0.0.0.0 --port 8000
 ```
 
-## 📞 技术支持
+## 📞 技术支持与文档
 
-- 📖 **详细文档**：[DEPLOYMENT.md](./DEPLOYMENT.md)
+### 📖 相关文档
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - 详细部署指南
+- **[STARTUP_GUIDE.md](./STARTUP_GUIDE.md)** - 启动脚本使用指南
+- **[FRONTEND_OPTIMIZATION_REPORT.md](./FRONTEND_OPTIMIZATION_REPORT.md)** - 前端优化报告
+
+### 🔧 帮助与支持
 - 🐛 **问题反馈**：[GitHub Issues](https://github.com/your-repo/issues)
 - 💬 **技术交流**：项目讨论区
+- 📧 **技术支持**：项目维护团队
+
+### 🚀 快速参考
+```bash
+# 常用命令快速参考
+./start-dev.sh           # 开发模式启动
+./build-prod.sh          # 生产构建
+./start-prod.sh          # 生产模式启动
+python3 self_check.py    # 质量检查
+python3 app.py --prod    # 直接生产启动
+```
 
 ## 📜 许可证
 
@@ -358,4 +437,6 @@ python3 app.py --host 0.0.0.0 --port 8000
 ---
 
 > 🌟 **如果这个项目对您有帮助，请给我们一个 Star！**
+> 
+> 💡 **提示**：推荐使用React前端界面，提供更专业和现代化的用户体验！
 

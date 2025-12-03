@@ -8,6 +8,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
+import os
+import sys
 
 from agent.simple_planner import get_planner
 from agent.functions import get_executor
@@ -29,12 +31,27 @@ app = FastAPI(
 
 # 挂载静态文件目录
 try:
-    import os
     if not os.path.exists(settings.STATIC_DIR):
         os.makedirs(settings.STATIC_DIR)
     app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
 except Exception as e:
     logger.warning(f"静态文件目录挂载失败: {e}")
+
+# 检查是否为生产模式（--prod 参数）
+PROD_MODE = "--prod" in sys.argv
+
+# 生产模式下挂载React构建文件
+if PROD_MODE:
+    try:
+        react_build_dir = "frontend/build"
+        if os.path.exists(react_build_dir) and os.path.exists(f"{react_build_dir}/index.html"):
+            # 挂载React静态文件
+            app.mount("/static", StaticFiles(directory=f"{react_build_dir}/static"), name="react_static")
+            logger.info(f"生产模式：已挂载React构建文件从 {react_build_dir}")
+        else:
+            logger.warning(f"生产模式：未找到React构建文件 {react_build_dir}")
+    except Exception as e:
+        logger.warning(f"React构建文件挂载失败: {e}")
 
 
 # 请求模型
@@ -54,7 +71,17 @@ class ChatResponse(BaseModel):
 
 @app.get("/")
 async def root():
-    """根路径 - 返回ChatGPT风格交互页面"""
+    """根路径 - 根据模式返回不同页面"""
+    if PROD_MODE:
+        # 生产模式：返回React构建的index.html
+        react_index = "frontend/build/index.html"
+        try:
+            if os.path.exists(react_index):
+                return FileResponse(react_index, media_type="text/html")
+        except Exception as e:
+            logger.error(f"无法找到React构建文件: {e}")
+    
+    # 开发模式或React构建文件不存在：返回原始HTML页面
     index_path = f"{settings.STATIC_DIR}/index.html"
     try:
         return FileResponse(index_path, media_type="text/html")
@@ -63,6 +90,7 @@ async def root():
         return {
             "message": "网络探测数据 AI 分析 Agent",
             "version": "1.0.0",
+            "mode": "production" if PROD_MODE else "development",
             "endpoints": {
                 "/chat": "POST - 发送自然语言查询",
                 "/health": "GET - 健康检查"
@@ -266,6 +294,7 @@ if __name__ == "__main__":
     parser.add_argument("-Q", "--verify", action="store_true", help="CLI模式：验证模式")
     parser.add_argument("--host", default="0.0.0.0", help="Web模式：绑定地址")
     parser.add_argument("--port", type=int, default=8000, help="Web模式：端口号")
+    parser.add_argument("--prod", action="store_true", help="生产模式：服务React构建文件")
     
     args = parser.parse_args()
     
@@ -284,6 +313,14 @@ if __name__ == "__main__":
     else:
         # Web服务模式
         import uvicorn
-        print(f"🚀 启动Web服务: http://{args.host}:{args.port}")
+        
+        # 根据模式显示不同信息
+        if args.prod:
+            print(f"🚀 启动生产模式服务: http://{args.host}:{args.port}")
+            print("📦 生产模式：服务React构建文件")
+        else:
+            print(f"🚀 启动开发模式服务: http://{args.host}:{args.port}")
+            print("🛠️  开发模式：需要单独启动React前端")
+        
         uvicorn.run(app, host=args.host, port=args.port)
 

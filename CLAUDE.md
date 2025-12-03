@@ -53,6 +53,14 @@ wk-ai-test/
 │   ├── 🛡️ query_quality_guard.py          # 查询质量保障系统
 │   ├── 🔧 intelligent_query_engine.py     # 智能查询引擎
 │   └── 📚 simple_analyzer.py     # 简化分析器
+├── 📁 frontend/                  # React现代化前端 (2024.12新增)
+│   ├── src/components/           # React组件
+│   │   ├── ChatInterface.js      # ChatGPT风格聊天界面
+│   │   ├── DataTable.js          # 专业表格组件
+│   │   └── ChartDisplay.js       # 图表展示组件
+│   ├── package.json              # 前端依赖配置
+│   ├── start.sh                  # 前端启动脚本
+│   └── README.md                 # 前端详细说明
 ├── 📁 db/                       # 数据库层
 │   ├── 🗃️ clickhouse_client.py   # ClickHouse安全客户端
 │   └── 📄 schema.md              # 数据库结构文档
@@ -60,11 +68,13 @@ wk-ai-test/
 │   └── ⚙️ settings.py            # 环境变量配置 (支持智能引擎开关)
 ├── 📁 utils/                    # 工具函数
 │   ├── 📊 chart.py               # 图表生成器
-│   └── ⏰ time_utils.py           # 时间处理工具
+│   └── ⏰ time_utils.py           # 时间处理工具(支持中文自然语言)
 ├── 📁 static/                   # 前端资源
-│   ├── 📄 index.html             # ChatGPT风格交互界面
-│   └── 🎨 markdown-test.html     # Markdown渲染测试页
-├── 🚀 app.py                     # FastAPI主入口 (增强版API)
+│   └── 📄 index.html             # 原始HTML界面(开发模式备用)
+├── 🚀 app.py                     # FastAPI主入口 (支持--prod生产模式)
+├── 🚀 start-dev.sh              # 一键开发启动脚本
+├── 🏗️ build-prod.sh             # 一键构建脚本
+├── 📖 STARTUP_GUIDE.md           # 启动脚本使用指南
 ├── 🧪 self_check.py              # 质量保证系统
 └── 📋 requirements*.txt          # 依赖管理
 ```
@@ -188,28 +198,47 @@ class Settings(BaseSettings):
     INTELLIGENT_ENGINE_FALLBACK: bool = True    # 回退机制
 ```
 
-## 🎨 前端界面特性
+## 🎨 前端界面特性 (2024.12重大升级)
 
-### ChatGPT风格交互界面
-**文件**: `static/index.html`
+### React + Ant Design 现代化界面（推荐）
+**文件**: `frontend/`
 
 **核心特性**:
-- 现代化ChatGPT风格界面设计
-- 实时Markdown渲染：表格、标题、列表、代码块
-- 智能建议提示：常用查询场景快速选择
-- 响应式设计：支持移动端和桌面端
-- 无刷新交互：WebSocket风格的流畅体验
+- **React 18 + Ant Design 5** - 企业级UI组件库
+- **ChatGPT风格对话界面** - 流畅的用户交互体验
+- **专业表格组件** - 自动数值识别和对齐，支持排序筛选
+- **SQL语法高亮** - 专业的代码展示效果
+- **图表预览下载** - 支持图表放大查看和本地保存
+- **响应式设计** - 完美适配桌面端和移动端
+- **组件化架构** - 高度模块化，易于维护扩展
 
-### Markdown渲染功能
-```javascript
-// 支持的Markdown格式
-- 表格渲染 | 自动对齐 | 悬停效果
-- 标题层级 # ## ### ####
-- 粗体斜体 **text** *text*
-- 列表支持 1. 有序 - 无序
-- 代码块 ```sql ```python
-- 引用 > 重要提示
-- 分割线 ---
+**主要组件**:
+- `ChatInterface.js` - 主聊天界面组件
+- `DataTable.js` - 专业数据表格组件
+- `ChartDisplay.js` - 图表展示和下载组件
+
+### 原始HTML界面（开发模式备用）
+**文件**: `static/index.html`
+
+**功能**:
+- 基础Markdown渲染支持
+- 表格对齐优化
+- 简单图表展示
+- 开发调试备用
+
+### 🚀 前端部署方案
+
+**开发模式**（推荐用于日常开发）:
+```bash
+./start-dev.sh          # 同时启动前后端
+# 前端: http://localhost:3000 (React热重载)
+# 后端: http://localhost:8000
+```
+
+**生产模式**（推荐用于部署）:
+```bash
+./build-prod.sh && ./start-prod.sh
+# 统一访问: http://localhost:8000 (React构建文件)
 ```
 
 ## 🛡️ 安全机制
@@ -328,18 +357,29 @@ INTELLIGENT_ENGINE_FALLBACK=false  # 完全智能模式
 
 ## 📞 项目信息
 
-### 项目统计
-- **核心代码行数**: 2,800+行
-- **模块文件数**: 22个核心业务模块
+### 项目统计 (2024.12最新)
+- **核心代码行数**: 3,500+行 (含React前端)
+- **模块文件数**: 28个核心业务模块
+- **React组件数**: 3个 (ChatInterface, DataTable, ChartDisplay)
+- **一键脚本**: 3个 (start-dev.sh, build-prod.sh, start-prod.sh)
 - **API接口**: 6个REST接口
-- **查询模式**: 从8种固定升级为动态生成
-- **升级时间**: 2024年12月 - 智能引擎重大升级
+- **查询模式**: 从8种固定升级为LLM动态生成
+- **前端框架**: React 18 + Ant Design 5 (替代传统HTML)
+- **时间解析**: 支持中文自然语言表达
 
 ### 技术支持
-- **详细文档**: README.md, DEPLOYMENT.md, INTELLIGENT_ENGINE_UPGRADE.md
+- **详细文档**: README.md, DEPLOYMENT.md, STARTUP_GUIDE.md, FRONTEND_OPTIMIZATION_REPORT.md
 - **质量保证**: 自动化测试 + 质量评估系统
 - **监控体系**: 性能监控 + 异常检测
+- **快速启动**: 一键开发/生产部署脚本
 
 ---
 
-> 💡 **给AI助手的提示**: 这个项目已经过完整的智能引擎升级，从传统的规则驱动系统升级为AI驱动的智能分析平台。在提供技术支持时，请注意项目的双重引擎特性（传统引擎 + 智能引擎），以及完善的配置管理和安全机制。
+> 💡 **给AI助手的提示**: 这个项目已完成2024年12月重大升级，包括：
+> 1. **React前端替代** - 从HTML升级为React+AntD现代化界面
+> 2. **智能引擎升级** - 从规则驱动升级为AI驱动
+> 3. **一键部署方案** - 开发模式双端口/生产模式单端口
+> 4. **中文时间解析** - 支持自然语言时间表达
+> 5. **组件化架构** - 高度模块化，易于维护扩展
+> 
+> 在提供技术支持时，请根据用户需求推荐合适的部署方案和使用方式。
