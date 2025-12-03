@@ -41,13 +41,22 @@ class SimpleQueryPlanner:
             "original_query": user_query  # 保存原始问题
         }
         
-        # 解析时间范围
+        # 解析时间范围 - 增强版自然语言时间处理
         if "近1h" in user_query or "近1小时" in user_query:
             query_plan["filters"]["time_range"] = "last_1_hour"
         elif "近3h" in user_query or "近3小时" in user_query:
             query_plan["filters"]["time_range"] = "last_3_hour"
         elif "近24h" in user_query or "近24小时" in user_query:
             query_plan["filters"]["time_range"] = "last_24_hour"
+        elif "昨天" in user_query:
+            # 直接传递自然语言，让time_utils处理
+            query_plan["filters"]["time_range"] = user_query
+        elif "今天" in user_query:
+            # 直接传递自然语言，让time_utils处理
+            query_plan["filters"]["time_range"] = user_query
+        elif "前天" in user_query:
+            # 直接传递自然语言，让time_utils处理
+            query_plan["filters"]["time_range"] = user_query
         
         # 解析指标
         if "丢包" in user_query or "packet_loss" in user_query.lower():

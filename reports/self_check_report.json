@@ -1,0 +1,49 @@
+{
+  "timestamp": "2025-12-03T11:38:08.855341",
+  "summary": {
+    "total": 3,
+    "passed": 0,
+    "failed": 3,
+    "pass_rate": 0.0,
+    "execution_time": 33.42770719528198
+  },
+  "details": [
+    {
+      "test_id": "task_001",
+      "question": "统计近1h，发起探测的探测设备(hostname)区分不同的任务(task_name）统计，分析这些设备的平均丢包和rtt情况",
+      "passed": false,
+      "score": 40.0,
+      "issues": [
+        "分析结构不够完整",
+        "回答过长，可能包含冗余信息"
+      ],
+      "execution_time": 0.0004889965057373047,
+      "answer_length": 1120
+    },
+    {
+      "test_id": "task_002",
+      "question": "统计近1h的探测目标节点(target_node)丢包情况，区分不同的任务(task_name）统计",
+      "passed": false,
+      "score": 40.0,
+      "issues": [
+        "缺少预期的分析重点：目标节点丢包分析",
+        "回答过长，可能包含冗余信息"
+      ],
+      "execution_time": 0.001165151596069336,
+      "answer_length": 849
+    },
+    {
+      "test_id": "task_003",
+      "question": "统计近1h ，各个目标节点(target_node)覆盖各个地区(src_isp+src_province)的丢包情况，评估地区浙江电信(src_isp='chinatelecom' src_province = 'zhejiang')用哪些目标节点(target_node)覆盖，网络质量比较好",
+      "passed": false,
+      "score": 10.0,
+      "issues": [
+        "缺少预期的分析重点：地区覆盖质量评估",
+        "缺少预期的关键词：['目标节点', 'target_node', '地区覆盖', 'src_isp', 'src_province', '丢包', '浙江电信', 'chinatelecom', 'zhejiang', '质量', 'top3']",
+        "回答过长，可能包含冗余信息"
+      ],
+      "execution_time": 0.0002281665802001953,
+      "answer_length": 1078
+    }
+  ]
+}

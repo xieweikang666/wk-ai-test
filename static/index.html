@@ -132,36 +132,64 @@
         }
         
         /* 表格样式 */
-        .message-text table {
+        .message-text table, .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 12px 0;
+            margin: 16px 0;
             background: #ffffff;
-            border-radius: 6px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .message-text th, .message-text td {
-            padding: 12px;
-            text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid #e2e8f0;
             font-size: 13px;
         }
         
-        .message-text th {
-            background-color: #f7fafc;
-            font-weight: 600;
-            color: #2d3748;
-            border-bottom: 2px solid #e2e8f0;
+        .message-text th, .message-text td, .data-table th, .data-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: middle;
+            line-height: 1.4;
         }
         
-        .message-text tr:last-child td {
+        .message-text th, .data-table th {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            font-weight: 600;
+            color: #1a202c;
+            border-bottom: 2px solid #cbd5e0;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        
+        .message-text td, .data-table td {
+            font-size: 13px;
+            color: #2d3748;
+        }
+        
+        .data-table tbody tr {
+            transition: background-color 0.2s ease;
+        }
+        
+        .data-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .data-table tbody tr:last-child td {
             border-bottom: none;
         }
         
-        .message-text tr:hover {
-            background-color: #f7fafc;
+        .data-table tbody tr:hover {
+            background-color: #edf2f7;
+        }
+        
+        /* 数值列右对齐 */
+        .data-table td:nth-child(n+3) {
+            text-align: right;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+        }
+        
+        .data-table th:nth-child(n+3) {
+            text-align: right;
         }
         
         /* 列表样式 */
@@ -235,8 +263,25 @@
         /* 水平分割线 */
         .message-text hr {
             border: none;
-            border-top: 2px solid #e2e8f0;
-            margin: 16px 0;
+            border-top: 2px dashed #d1d5db;
+            margin: 20px 0;
+            height: 0;
+        }
+        
+        /* SQL区域样式增强 */
+        .sql-section {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+        }
+        
+        .sql-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
         }
         
         .chart-container {
@@ -473,12 +518,20 @@
                 
                 const data = await response.json();
                 
-                // 添加AI回复
-                let responseText = data.answer;
+                // 构建回复内容：SQL在前，分割线在中，分析内容在后
+                let responseText = '';
                 
-                // 如果有SQL，添加到回复中
+                // 如果有SQL，先显示SQL
                 if (data.sql) {
-                    responseText += '\n\n```sql\n' + data.sql + '\n```';
+                    responseText = '```sql\n' + data.sql + '\n```\n\n---\n\n';
+                }
+                
+                // 添加分析内容
+                responseText += data.answer;
+                
+                // 如果有质量评分，添加到回复末尾
+                if (data.quality_summary) {
+                    responseText += '\n\n---\n\n' + data.quality_summary;
                 }
                 
                 addMessage('assistant', responseText, data.chart_url);
@@ -533,6 +586,61 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
         
+        function formatTables(content) {
+            // 处理Markdown表格
+            const lines = content.split('\n');
+            let inTable = false;
+            let tableHtml = '<table class="data-table">';
+            let result = [];
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // 检测表格开始
+                if (line.startsWith('|') && line.endsWith('|') && line.split('|').length >= 3) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableHtml = '<table class="data-table">';
+                    }
+                    
+                    const cells = line.split('|').slice(1, -1).map(cell => cell.trim());
+                    
+                    // 检查是否为分隔行（如 |---|---|---）
+                    if (cells.every(cell => /^:?-+:?$/.test(cell))) {
+                        continue; // 跳过分隔行
+                    }
+                    
+                    // 检查下一行是否为分隔行，如果是则这行是表头
+                    const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+                    const isHeader = nextLine.startsWith('|') && nextLine.split('|').length >= 3 && 
+                                   nextLine.split('|').slice(1, -1).every(cell => /^:?-+:?$/.test(cell.trim()));
+                    
+                    if (isHeader) {
+                        tableHtml += '<thead><tr>' + cells.map(cell => `<th>${escapeHtml(cell)}</th>`).join('') + '</tr></thead><tbody>';
+                        i++; // 跳过分隔行
+                    } else {
+                        tableHtml += '<tr>' + cells.map(cell => `<td>${escapeHtml(cell)}</td>`).join('') + '</tr>';
+                    }
+                } else {
+                    // 表格结束
+                    if (inTable) {
+                        tableHtml += '</tbody></table>';
+                        result.push(tableHtml);
+                        inTable = false;
+                    }
+                    result.push(lines[i]);
+                }
+            }
+            
+            // 处理最后一个表格
+            if (inTable) {
+                tableHtml += '</tbody></table>';
+                result.push(tableHtml);
+            }
+            
+            return result.join('\n');
+        }
+        
         function formatContent(content) {
             // HTML转义
             let formatted = content
@@ -543,7 +651,10 @@
             // 处理代码块（优先处理，避免被其他规则干扰）
             formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
                 if (lang === 'sql') {
-                    return `<div class="sql-code">${escapeHtml(code)}</div>`;
+                    return `<div class="sql-section">
+                        <div class="sql-title">🔍 查询SQL</div>
+                        <div class="sql-code">${escapeHtml(code.trim())}</div>
+                    </div>`;
                 } else {
                     return `<pre><code>${escapeHtml(code)}</code></pre>`;
                 }
@@ -557,25 +668,8 @@
             formatted = formatted.replace(/^## (.*$)/gm, '<h2>$1</h2>');
             formatted = formatted.replace(/^# (.*$)/gm, '<h1>$1</h1>');
             
-            // 处理表格
-            formatted = formatted.replace(/\|(.+)\|/gm, function(match, content) {
-                const cells = content.split('|').map(cell => cell.trim());
-                if (cells.length >= 2 && cells.every(cell => cell.length > 0)) {
-                    const rowHtml = cells.map(cell => `<td>${cell}</td>`).join('');
-                    return `<table><tr>${rowHtml}</tr></table>`;
-                }
-                return match;
-            });
-            
-            // 处理表格头行
-            formatted = formatted.replace(/<table><tr>(.*?)<\/tr><\/table>\n\s*\|[-:\s|]+\|/g, function(match, rowContent) {
-                const cells = rowContent.match(/<td>(.*?)<\/td>/g);
-                if (cells && cells.length >= 2) {
-                    const headerCells = cells.map(cell => cell.replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>')).join('');
-                    return `<table>${headerCells}</table>`;
-                }
-                return match;
-            });
+            // 处理表格 - 重新编写以支持完整表格结构
+            formatted = formatTables(formatted);
             
             // 处理粗体
             formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');

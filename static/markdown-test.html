@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown渲染效果测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f7f8;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .test-result {
+            border-left: 4px solid #5470c6;
+            padding-left: 16px;
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        /* 复制主界面的Markdown样式 */
+        .message-text {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #2d3748;
+        }
+        
+        .message-text h1, .message-text h2, .message-text h3, .message-text h4 {
+            margin: 16px 0 8px 0;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        
+        .message-text h1 { font-size: 1.5em; }
+        .message-text h2 { font-size: 1.3em; }
+        .message-text h3 { font-size: 1.1em; }
+        
+        .message-text p {
+            margin: 8px 0;
+        }
+        
+        .message-text strong, .message-text b {
+            font-weight: 600;
+            color: #1a202c;
+        }
+        
+        .message-text em, .message-text i {
+            font-style: italic;
+            color: #4a5568;
+        }
+        
+        .message-text table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            background: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .message-text th, .message-text td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 13px;
+        }
+        
+        .message-text th {
+            background-color: #f7fafc;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .message-text tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .message-text tr:hover {
+            background-color: #f7fafc;
+        }
+        
+        .message-text ul, .message-text ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        
+        .message-text li {
+            margin: 4px 0;
+        }
+        
+        .message-text ul li {
+            list-style-type: disc;
+        }
+        
+        .message-text ol li {
+            list-style-type: decimal;
+        }
+        
+        .message-text code {
+            background-color: #f1f5f9;
+            color: #e53e3e;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+        }
+        
+        .message-text pre {
+            background-color: #1a202c;
+            color: #e2e8f0;
+            border-radius: 6px;
+            padding: 16px;
+            margin: 12px 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .message-text pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        .message-text blockquote {
+            border-left: 4px solid #5470c6;
+            padding-left: 16px;
+            margin: 12px 0;
+            color: #4a5568;
+            background-color: #f7fafc;
+            padding: 12px 16px;
+            border-radius: 0 6px 6px 0;
+        }
+        
+        .message-text hr {
+            border: none;
+            border-top: 2px solid #e2e8f0;
+            margin: 16px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Markdown渲染功能测试</h1>
+        <div class="test-result">
+            <p><strong>状态：</strong>✅ 已完成Markdown渲染支持增强</p>
+            <p><strong>支持格式：</strong>表格、标题、粗体、斜体、列表、代码块、引用、分割线</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📊 实际渲染效果</h2>
+        <div class="message-text" id="markdownContent">
+            <!-- 这里将通过JavaScript插入Markdown内容 -->
+        </div>
+    </div>
+
+    <script>
+        // 示例Markdown内容
+        const markdownContent = `# 设备数量分析报告
+
+**核心结论**：所有运营商的设备数量均为1711599台，显示出设备分布的高度集中性。
+
+## 数量统计
+| 运营商        | 设备数量 | 占比   |
+|---------------|----------|--------|
+| 运营商A      | 1711599  | 100%   |
+
+## 分布分析
+- **设备数量**：本次查询覆盖的设备数量为1711599，所有设备均归属于同一运营商
+- **集中性**：设备数量高度集中，表明该运营商在当前时间段内的覆盖能力较强
+
+## 趋势建议
+1. **多样化选择**：考虑引入其他运营商的设备
+2. **监控扩展**：建议持续监控设备数量变化
+3. **质量评估**：建议对现有设备进行定期健康检查
+
+> 💡 **重要提示**：建议在确保网络稳定性的同时，积极探索其他运营商的设备引入。
+
+---
+
+\`\`\`sql
+SELECT src_isp, COUNT(DISTINCT hostname) as device_count
+FROM detect.detect_ping_log
+WHERE timestamp >= 1764749148 
+GROUP BY src_isp
+\`\`\``;
+
+        // Markdown格式化函数（从主界面复制）
+        function formatContent(content) {
+            let formatted = content
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            // 处理代码块
+            formatted = formatted.replace(/```(\w*)\n([\s\S]*?)```/g, function(match, lang, code) {
+                if (lang === 'sql') {
+                    return `<div style="background-color: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px; margin: 8px 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; overflow-x: auto;">${escapeHtml(code)}</div>`;
+                } else {
+                    return `<pre><code>${escapeHtml(code)}</code></pre>`;
+                }
+            });
+            
+            // 处理内联代码
+            formatted = formatted.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // 处理标题
+            formatted = formatted.replace(/^### (.*$)/gm, '<h3>$1</h3>');
+            formatted = formatted.replace(/^## (.*$)/gm, '<h2>$1</h2>');
+            formatted = formatted.replace(/^# (.*$)/gm, '<h1>$1</h1>');
+            
+            // 处理表格
+            formatted = formatted.replace(/\|(.+)\|/gm, function(match, content) {
+                const cells = content.split('|').map(cell => cell.trim());
+                if (cells.length >= 2 && cells.every(cell => cell.length > 0)) {
+                    const rowHtml = cells.map(cell => `<td>${cell}</td>`).join('');
+                    return `<table><tr>${rowHtml}</tr></table>`;
+                }
+                return match;
+            });
+            
+            // 处理表格头行
+            formatted = formatted.replace(/<table><tr>(.*?)<\/tr><\/table>\n\s*\|[-:\s|]+\|/g, function(match, rowContent) {
+                const cells = rowContent.match(/<td>(.*?)<\/td>/g);
+                if (cells && cells.length >= 2) {
+                    const headerCells = cells.map(cell => cell.replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>')).join('');
+                    return `<table>${headerCells}</table>`;
+                }
+                return match;
+            });
+            
+            // 处理粗体
+            formatted = formatted.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+            
+            // 处理斜体
+            formatted = formatted.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            formatted = formatted.replace(/_([^_]+)_/g, '<em>$1</em>');
+            
+            // 处理无序列表
+            formatted = formatted.replace(/^[\-\*]\s+(.+)$/gm, '<li>$1</li>');
+            formatted = formatted.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+            
+            // 处理有序列表
+            formatted = formatted.replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>');
+            
+            // 处理引用
+            formatted = formatted.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+            
+            // 处理水平分割线
+            formatted = formatted.replace(/^---+$/gm, '<hr>');
+            formatted = formatted.replace(/^\*\*\*+$/gm, '<hr>');
+            
+            // 处理段落
+            formatted = formatted.replace(/\n\n+/g, '</p><p>');
+            formatted = '<p>' + formatted + '</p>';
+            
+            // 清理空段落
+            formatted = formatted.replace(/<p><\/p>/g, '');
+            formatted = formatted.replace(/<p>(<h[1-6]>)/g, '$1');
+            formatted = formatted.replace(/(<\/h[1-6]>)<\/p>/g, '$1');
+            formatted = formatted.replace(/<p>(<table>)/g, '$1');
+            formatted = formatted.replace(/(<\/table>)<\/p>/g, '$1');
+            formatted = formatted.replace(/<p>(<ul>)/g, '$1');
+            formatted = formatted.replace(/(<\/ul>)<\/p>/g, '$1');
+            formatted = formatted.replace(/<p>(<blockquote>)/g, '$1');
+            formatted = formatted.replace(/(<\/blockquote>)<\/p>/g, '$1');
+            formatted = formatted.replace(/<p>(<hr>)<\/p>/g, '$1');
+            
+            return formatted;
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 应用Markdown渲染
+        document.getElementById('markdownContent').innerHTML = formatContent(markdownContent);
+    </script>
+</body>
+</html>

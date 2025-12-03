@@ -1,0 +1,28 @@
+{
+  "test_cases": [
+    {
+      "id": "task_001",
+      "question": "统计近1h，发起探测的探测设备(hostname)区分不同的任务(task_name）统计，分析这些设备的平均丢包和rtt情况",
+      "expected_keywords": ["探测设备", "hostname", "任务", "task_name", "丢包", "rtt", "平均", "质量"],
+      "expected_focus": "探测设备质量分析",
+      "description": "分析探测设备的丢包和RTT情况，识别质量最好和最差的设备",
+      "min_length": 250
+    },
+    {
+      "id": "task_002", 
+      "question": "统计近1h的探测目标节点(target_node)丢包情况，区分不同的任务(task_name）统计",
+      "expected_keywords": ["目标节点", "target_node", "丢包", "任务", "task_name", "rtt", "列表"],
+      "expected_focus": "目标节点丢包分析",
+      "description": "获取目标节点的丢包和RTT情况，按任务分类输出对比数据",
+      "min_length": 200
+    },
+    {
+      "id": "task_003",
+      "question": "统计近1h ，各个目标节点(target_node)覆盖各个地区(src_isp+src_province)的丢包情况，评估地区浙江电信(src_isp='chinatelecom' src_province = 'zhejiang')用哪些目标节点(target_node)覆盖，网络质量比较好",
+      "expected_keywords": ["目标节点", "target_node", "地区覆盖", "src_isp", "src_province", "丢包", "浙江电信", "chinatelecom", "zhejiang", "质量", "top3"],
+      "expected_focus": "地区覆盖质量评估",
+      "description": "分析目标节点的地区覆盖情况，重点评估浙江电信的覆盖质量",
+      "min_length": 300
+    }
+  ]
+}
