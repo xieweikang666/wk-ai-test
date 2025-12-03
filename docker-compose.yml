@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  ai-agent:
+    build: .
+    container_name: network-detect-ai-agent
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./static:/app/static
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-Yle3nSp72pPw66kaHy4goZmjPdz5oHTrwUdcY29ITTWWNtHq}
+      - OPENAI_API_BASE=${OPENAI_API_BASE:-https://geekai.co/api/v1}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
+      - CLICKHOUSE_ENABLE=true
+      - CLICKHOUSE_ADDRESSES=${CLICKHOUSE_ADDRESSES:-cc-2zet16rb5415n61g4-ck-l5.clickhouseserver.rds.aliyuncs.com:9000}
+      - CLICKHOUSE_DATABASE=${CLICKHOUSE_DATABASE:-detect}
+      - CLICKHOUSE_USERNAME=${CLICKHOUSE_USERNAME:-zcdn}
+      - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-0b6e38A0b3c0cf}
+      - CLICKHOUSE_TABLE_PING=${CLICKHOUSE_TABLE_PING:-detect_ping_log}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
