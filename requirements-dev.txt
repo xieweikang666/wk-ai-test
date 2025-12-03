@@ -1,0 +1,27 @@
+# 开发依赖
+# 包含 requirements.txt 中的所有生产依赖
+-r requirements.txt
+
+# 测试框架
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+
+# 代码质量工具
+black==23.11.0
+flake8==6.1.0
+mypy==1.7.1
+isort==5.12.0
+
+# 开发工具
+pre-commit==3.5.0
+bandit==1.7.5  # 安全检查
+safety==2.3.5  # 依赖漏洞检查
+
+# 文档生成
+mkdocs==1.5.3
+mkdocs-material==9.4.8
+
+# 性能分析
+memory-profiler==0.61.0
+line-profiler==4.1.1
